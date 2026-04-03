@@ -4,6 +4,10 @@ An intelligent full-stack application designed to automate bill explanations, de
 
 ![Project Theme: Black & Red](https://img.shields.io/badge/Theme-Black%20%26%20Red-red) ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688) ![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-FF4B4B) ![LangChain](https://img.shields.io/badge/AI-LangChain-blue)
 
+**🌐 Live Dashboard:** [https://ai-powered-billing-intelligence-nm7b.onrender.com/](https://ai-powered-billing-intelligence-nm7b.onrender.com/)
+
+---
+
 ---
 
 ## 🔥 Key Features
