@@ -10,9 +10,9 @@ def load_billing_data():
 
 def get_user_data(user_id: int):
     df = load_billing_data()
+    if df.empty: return None
     user_data = df[df["user_id"] == user_id]
-    if user_data.empty:
-        return None
+    if user_data.empty: return None
     return user_data.to_dict(orient="records")[0]
 
 def get_all_data():
@@ -22,9 +22,10 @@ def get_all_data():
 def get_analytics():
     df = load_billing_data()
     if df.empty:
-        return {"total_users": 0, "most_used_plan": "N/A", "revenue_by_plan": {}, "usage_counts": {}}
+        return {"total_users": 0, "total_revenue": 0, "most_used_plan": "N/A", "revenue_by_plan": {}, "usage_counts": {}}
     
     total_users = len(df)
+    total_revenue = int(df["bill_amount"].sum())
     most_used_plan = df["plan"].mode()[0] if not df.empty else "N/A"
     
     revenue_by_plan = df.groupby("plan")["bill_amount"].sum().to_dict()
@@ -32,6 +33,7 @@ def get_analytics():
     
     return {
         "total_users": total_users,
+        "total_revenue": total_revenue,
         "most_used_plan": most_used_plan,
         "revenue_by_plan": revenue_by_plan,
         "usage_counts": usage_counts

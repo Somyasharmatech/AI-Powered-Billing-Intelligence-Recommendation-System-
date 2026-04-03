@@ -6,7 +6,6 @@ from typing import Dict, Any, List
 # Setup for LLM with LangChain
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import CharacterTextSplitter
 from langchain.docstore.document import Document
 from langchain.chains import RetrievalQA
 
@@ -54,57 +53,51 @@ init_rag_system()
 
 def explain_bill(user_data: Dict[str, Any]) -> str:
     if USE_MOCK:
-        extra_charge = "which resulted in additional charges being applied." if user_data["usage"] == "high" else "which aligns with the normal limits."
-        return (f"The user is currently subscribed to the **{user_data['plan']} plan**.\n"
-                f"Based on historical data, usage sits at **{user_data['data_used']}** ({user_data['usage']}), "
-                f"{extra_charge} \n"
-                f"**Total Outstanding Balance:** ${user_data['bill_amount']}")
+        reasoning = (
+            f"**Why the bill is {'high' if user_data['usage'] == 'high' else 'normal'}:** The final bill generated is ${user_data['bill_amount']}. This is directly correlated to their consumption volume on the {user_data['plan']} plan.\n\n"
+            f"**What caused the issue:** The customer's internal usage metric is currently tracked as '{user_data['usage']}' reflecting exactly {user_data['data_used']} of data transferred during the billing cycle.\n\n"
+            f"**What action is recommended:** {'We advise an immediate upgrade to a premium tier to mitigate overage fees.' if user_data['usage'] == 'high' else 'No immediate action required, usage is within safe parameters.'}"
+        )
+        return reasoning
     
-    prompt = (f"Act as a professional financial billing analyst. Explain the bill for User ID {user_data['user_id']}. "
-              f"They are subscribed to the {user_data['plan']} plan, have {user_data['usage']} data consumption tracking at {user_data['data_used']}, "
-              f"and their current generated bill is {user_data['bill_amount']}. "
-              "Provide a natural, structured paragraph explanation detailing why the bill is this amount based on these parameters.")
+    prompt = (f"Act as an expert financial telecom analyst. Analyze the bill for User ID {user_data['user_id']} who is on the {user_data['plan']} plan, "
+              f"with {user_data['data_used']} data used, resulting in a bill of {user_data['bill_amount']}. "
+              "You MUST format your response into exactly these three distinct sections: "
+              "\n- **Why the bill is high** (or why it is normal)"
+              "\n- **What caused the issue**"
+              "\n- **What action is recommended**.")
     return qa_chain.run(prompt)
 
 def recommend_plan(user_data: Dict[str, Any]) -> str:
-    if USE_MOCK:
-        if user_data["usage"] == "high":
-            return (f"**Recommendation Evaluation:**\n"
-                    f"Our analytics indicate sustained high usage ({user_data['data_used']}) on the {user_data['plan']} tier. "
-                    f"To prevent ongoing overage charges and optimize financial efficiency, we strongly suggest migrating this account to the **Premium Plan**.")
-        elif user_data["usage"] == "low":
-            return (f"**Recommendation Evaluation:**\n"
-                    f"Customer utilization is currently low ({user_data['data_used']}). Continuing on the {user_data['plan']} tier is not cost effective. "
-                    f"Downgrading to the **Basic Plan** is recommended to maximize value.")
-        else:
-            return (f"**Recommendation Evaluation:**\n"
-                    f"The current **{user_data['plan']} Plan** effectively supports this user's consumption parameters without incurring unnecessary overflow charges.")
-    
-    prompt = (f"Act as a professional enterprise consultant. Based on the following customer profile: (Plan Subscribed: {user_data['plan']}, "
-              f"Data Usage Metrics: {user_data['usage']}, Exact Volume: {user_data['data_used']}). "
-              "Please evaluate their profile and output a structured, professional business recommendation on the optimal subscription plan for them going forward. Explain the financial reasoning.")
-    return qa_chain.run(prompt)
+    # Use the same powerful 3-step prompt format for plan recommendations to keep it uniform
+    return explain_bill(user_data)
 
 def detect_anomaly(all_data: List[Dict[str, Any]]) -> dict:
     df = pd.DataFrame(all_data)
     anomalies = []
     
-    dup_count = df.duplicated(subset=['user_id']).sum()
-    if dup_count > 0:
-        anomalies.append(f"- User records duplicated. Total duplicates: **{dup_count} entries**.")
+    # Duplicate billing detection
+    dup_users = df[df.duplicated(subset=['user_id'], keep=False)]
+    for uid in dup_users['user_id'].unique():
+        anomalies.append(f"User {uid} billed twice")
         
+    # Bill amount above threshold
     high_bills = df[df['bill_amount'] > 1000]
     for uid in high_bills['user_id']:
-        anomalies.append(f"- User {uid} generated an unusually high bill exceeding safe thresholds.")
+        anomalies.append(f"User {uid} unusually high bill (${high_bills[high_bills['user_id']==uid]['bill_amount'].values[0]})")
         
-    mismatches = df[(df['plan'] == 'Basic') & (df['bill_amount'] > 500)]
+    # Unusual usage pattern
+    mismatches = df[(df['plan'] == 'Basic') & ((df['bill_amount'] > 500) | (df['usage'] == 'high'))]
     for uid in mismatches['user_id']:
-        anomalies.append(f"- User {uid} (Basic Plan) billed exceptionally high, indicating severe undetected overages.")
+        if uid not in high_bills['user_id'].values:
+            anomalies.append(f"User {uid} exhibits unusual usage pattern for Basic tier.")
          
-    if not anomalies:
-         return {"count": 0, "report": "✔ System check passed. No anomalies detected in current billing cycles."}
+    if len(anomalies) == 0:
+         return {"count": 0, "report": "✔ No unusual anomalies detected."}
          
-    report = f"⚠ {len(anomalies)} anomalies detected:\n" + "\n".join(anomalies)
+    report = f"⚠ {len(anomalies)} anomalies detected:\n"
+    for anomaly in anomalies:
+        report += f"- {anomaly}\n"
     
     return {"count": len(anomalies), "report": report}
 
@@ -112,9 +105,8 @@ def query_data(query: str, all_data: List[Dict[str, Any]]) -> str:
     if USE_MOCK:
         df = pd.DataFrame(all_data)
         if "highest revenue" in query.lower():
-            revenue_by_plan = df.groupby("plan")["bill_amount"].sum()
-            best_plan = revenue_by_plan.idxmax()
-            return f"**Analysis Result:** Based on financial aggregation, the plan driving the highest systemic revenue is the **{best_plan} plan**."
-        return "I am operating in local mock mode. Please query simple constraints like 'Which plan generates highest revenue?' to test UI integrations seamlessly!"
+            best_plan = df.groupby("plan")["bill_amount"].sum().idxmax()
+            return f"**Result:** The highest revenue generation stems from the **{best_plan} plan**."
+        return "Local mock mode limits query generation. Connect your OpenAI API key for full natural language interaction."
         
     return qa_chain.run(query)
