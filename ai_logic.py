@@ -55,17 +55,17 @@ def explain_bill(user_data: Dict[str, Any]) -> str:
     if USE_MOCK:
         if user_data['usage'] == 'high':
             reasoning = (
-                "**1. Explanation:**\nUser is currently enrolled in the Standard tier, acquiring overage charges.\n\n"
+                f"**1. Explanation:**\nUser is currently enrolled in the {user_data['plan']} tier and utilized {user_data['data_used']} of data, resulting in a final bill of ${user_data['bill_amount']}, acquiring overage charges.\n\n"
                 "**2. Reason:**\nThe amount of data used exceeded the established plan threshold.\n\n"
-                "**3. Recommendation:**\nUpgrade the user to a Premium tier to normalize cost efficiency.\n\n"
-                "**4. Business Insight:**\nThe user is overcharged due to high usage. This may reduce customer satisfaction. Recommend upgrading to a higher plan."
+                "**3. Recommendation:**\nUpgrade the user to a higher capacity tier to normalize cost efficiency.\n\n"
+                "**4. Business Insight:**\n- **Issue identified:** User overcharged due to high usage.\n- **Business impact:** May reduce customer satisfaction and increase churn risk.\n- **Recommended action:** Recommend upgrading to a higher plan."
             )
         else:
             reasoning = (
-                "**1. Explanation:**\nUser is enrolled in the standard tier and billed within nominal range.\n\n"
+                f"**1. Explanation:**\nUser is enrolled in the {user_data['plan']} tier and utilized {user_data['data_used']} of data, resulting in a final bill of ${user_data['bill_amount']} within nominal range.\n\n"
                 "**2. Reason:**\nData utilization parameters matched the baseline threshold cleanly.\n\n"
                 "**3. Recommendation:**\nNo further plan adjustments are necessary right now.\n\n"
-                "**4. Business Insight:**\nStable consumption supports expected baseline LTV. No intervention required."
+                "**4. Business Insight:**\n- **Issue identified:** None, usage is stable.\n- **Business impact:** Stable consumption supports expected baseline LTV.\n- **Recommended action:** No intervention required."
             )
         return reasoning
     
