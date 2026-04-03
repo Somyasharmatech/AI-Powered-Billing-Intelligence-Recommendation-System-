@@ -79,8 +79,32 @@ def explain_bill(user_data: Dict[str, Any]) -> str:
     return qa_chain.run(prompt)
 
 def recommend_plan(user_data: Dict[str, Any]) -> str:
-    # Use the same powerful 4-step prompt format for plan recommendations to keep it strictly uniform 
-    return explain_bill(user_data)
+    if USE_MOCK:
+        if user_data['usage'] == 'high':
+            reasoning = (
+                f"**1. Explanation:**\nUser {user_data['user_id']} heavily exceeded typical data thresholds for the {user_data['plan']} tier.\n\n"
+                "**2. Reason:**\nThe consumption of {user_data['data_used']} data indicates a mismatch with their current plan limitations.\n\n"
+                "**3. Recommendation:**\nWe strongly recommend upgrading this account to the Premium tier immediately to provide cost stability.\n\n"
+                "**4. Business Insight:**\n- **Issue identified:** Imminent overage frustration.\n- **Business impact:** Churn risk due to unexpected high billing.\n- **Recommended action:** Proactive sales call to offer Premium upgrade."
+            )
+        else:
+            reasoning = (
+                f"**1. Explanation:**\nUser {user_data['user_id']} is consuming data comfortably within the {user_data['plan']} tier.\n\n"
+                "**2. Reason:**\nTotal data consumption ({user_data['data_used']}) perfectly matches the profile type.\n\n"
+                "**3. Recommendation:**\nMaintain the current subscription tier.\n\n"
+                "**4. Business Insight:**\n- **Issue identified:** No immediate issue.\n- **Business impact:** Highly stable MRR via consistent utilization.\n- **Recommended action:** Keep monitoring, do not alter account."
+            )
+        return reasoning
+
+    prompt = (f"Act as a strategic telecom retention specialist. Review the profile of User ID {user_data['user_id']} currently on the {user_data['plan']} plan, "
+              f"with {user_data['data_used']} data usage. "
+              "Your primary goal is to RECOMMEND A FUTURE PLAN for them based on their data. "
+              "You MUST format your response strictly into a numbered list exactly matching these four sections: "
+              "\n1. Explanation (State their profile and current compatibility)"
+              "\n2. Reason (Why they should or should not switch plans)"
+              "\n3. Recommendation (The specific plan you think they should be on next)"
+              "\n4. Business Insight (Must explicitly list '- Issue identified', '- Business impact', '- Recommended action').")
+    return qa_chain.run(prompt)
 
 def detect_anomaly(all_data: List[Dict[str, Any]]) -> dict:
     df = pd.DataFrame(all_data)
