@@ -7,11 +7,11 @@ An intelligent full-stack application designed to automate bill explanations, de
 ---
 
 ## 🔥 Key Features
-* **Billing Explanation:** Fetches relevant billing statements and provides a natural-language breakdown of usage, extra charges, and totals.
-* **Plan Recommendation:** Analyzes historical user usage to recommend downgrading or upgrading to the most cost-efficient telecom/data plans.
-* **Anomaly Detection:** Scans your entire database for suspiciously high bills, duplicate records, or usage mismatches resulting from hidden system errors.
+* **Strict Analytical AI Framework:** Every query rigorously outputs a 4-step logic framework (1. Explanation, 2. Reason, 3. Recommendation, 4. Business Insight) assessing precisely why bills are charged and establishing immediate actionable business impact.
+* **Top Insights Dashboard:** Upload customized `.csv` databases dynamically and instantly view absolute total aggregations, anomaly hit-rates, and interactive Plotly-powered charts detailing Revenue and Usage distribution.
+* **Smart Anomaly Detection:** Scans your entire database intelligently for identically duplicated bill paths, excessively high bills transcending thresholds, or raw usage mismatches resulting from hidden system errors, alerting administrators directly via dashboard diagnostic warning banners.
+* **Session Memory Logs:** Deep integration with `st.session_state` logs exactly every action undertaken globally (Data queries, Database changes, Plan optimizations) into the navigation sidebar actively for administrators.
 * **Natural Language Data Querying:** Ask your database human queries like *"Which plan generates the highest revenue?"* and get immediate computational answers.
-* **Analytics Dashboard:** Upload customized `.csv` databases dynamically and instantly view Plotly-powered charts detailing Revenue and Usage distribution.
 
 ---
 
