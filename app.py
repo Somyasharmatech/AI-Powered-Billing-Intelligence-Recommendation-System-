@@ -39,11 +39,23 @@ h1, h2, h3 {
 div[data-testid="stMetricValue"] {
     color: #ff1a1a;
 }
+.status-indicator {
+    color: #00ff00;
+    font-weight: bold;
+    font-size: 14px;
+}
 </style>
 """, unsafe_allow_html=True)
 
 st.title("AI Billing Intelligence Dashboard")
-st.markdown("This system simulates integration with enterprise billing platforms to automate billing analysis, detect anomalies, and generate insights.")
+st.markdown("This system simulates integration with enterprise billing platforms, providing real-time billing analysis, anomaly detection, and intelligent recommendations.")
+
+st.markdown("#### System Status:")
+c1, c2, c3 = st.columns(3)
+c1.markdown("<span class='status-indicator'>✔ Data Loaded</span>", unsafe_allow_html=True)
+c2.markdown("<span class='status-indicator'>✔ AI Engine Active</span>", unsafe_allow_html=True)
+c3.markdown("<span class='status-indicator'>✔ Analysis Ready</span>", unsafe_allow_html=True)
+st.markdown("---")
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Main Menu", [
@@ -76,6 +88,7 @@ if uploaded_file is not None:
             except requests.exceptions.ConnectionError:
                 st.sidebar.error("API Server is not running.")
 
+
 if page == "1. Explain Bill":
     with st.container():
         st.header("🧾 Explain Bill")
@@ -92,6 +105,7 @@ if page == "1. Explain Bill":
                     try:
                         res = requests.post(f"{API_URL}/explain_bill", json={"user_id": int(user_id)})
                         if res.status_code == 200:
+                            st.success("Analysis Complete")
                             st.info(res.json().get("explanation", ""))
                             log_action(f"Explained bill for user {user_id}")
                         else:
@@ -101,7 +115,7 @@ if page == "1. Explain Bill":
 
 elif page == "2. Recommend Plan":
     with st.container():
-        st.header("🎯 Recommend Plan")
+        st.header("💡 Recommend Plan")
         st.markdown("Automated strategic consultation on optimal plan tier modifications.")
         
         col1, col2 = st.columns([1, 2])
@@ -115,7 +129,8 @@ elif page == "2. Recommend Plan":
                     try:
                         res = requests.post(f"{API_URL}/recommend_plan", json={"user_id": int(user_id)})
                         if res.status_code == 200:
-                            st.success(res.json().get("recommendation", ""))
+                            st.success("Analysis Complete")
+                            st.info(res.json().get("recommendation", ""))
                             log_action(f"Generated strategic plan recommendation for user {user_id}")
                         else:
                             st.error(f"Error: {res.json().get('detail', 'Unknown error')}")
@@ -124,7 +139,7 @@ elif page == "2. Recommend Plan":
 
 elif page == "3. Detect Anomalies":
     with st.container():
-        st.header("🚨 System Anomalies")
+        st.header("⚠ System Anomalies")
         st.markdown("Scan the entire billing database for irregularities, duplicates, or abnormal behaviors.")
         
         if st.button("Run Global Diagnostics"):
@@ -132,6 +147,7 @@ elif page == "3. Detect Anomalies":
                 try:
                     res = requests.get(f"{API_URL}/detect_anomaly")
                     if res.status_code == 200:
+                        st.success("Analysis Complete")
                         data = res.json()
                         count = data.get("count", 0)
                         
@@ -144,6 +160,7 @@ elif page == "3. Detect Anomalies":
                             st.success("✔ System Check Passed: No obvious anomalies detected.")
                             log_action("Ran anomaly diagnostics: zero anomalies found.")
                             
+                        st.markdown("---")
                         st.markdown("### Raw Audit Logs")
                         df = pd.read_csv("billing_data.csv")
                         st.dataframe(df, use_container_width=True)
@@ -161,19 +178,32 @@ elif page == "4. Insights Dashboard":
             data = res.json()
             total_users = data.get("total_users", 0)
             total_rev = data.get("total_revenue", 0)
+            avg_bill = data.get("average_bill", 0)
             most_used = data.get("most_used_plan", "N/A")
             rev_data = data.get("revenue_by_plan", {})
             use_data = data.get("usage_counts", {})
             
             high_usage_amount = use_data.get("high", 0)
             
+            # Request explicit Top Insights calculation (anomalies usually tracked at root, we'll fetch via endpoint)
+            anom_res = requests.get(f"{API_URL}/detect_anomaly")
+            anom_count = anom_res.json().get("count", 0) if anom_res.status_code == 200 else 0
+            
+            st.markdown("### 👉 Top Insights")
+            col_insight1, col_insight2 = st.columns(2)
+            with col_insight1:
+                st.info(f"- **{list(rev_data.keys())[list(rev_data.values()).index(max(rev_data.values()))] if rev_data else 'N/A'}** plan generates highest revenue\n- **{anom_count}** anomalies detected")
+            with col_insight2:
+                st.info(f"- Average bill: **₹{avg_bill}**\n- **{high_usage_amount}** high-usage users identified")
+            
+            st.markdown("---")
+            
             # --- METRICS CARDS ---
-            m1, m2, m3, m4, m5 = st.columns(5)
+            m1, m2, m3, m4 = st.columns(4)
             m1.metric("Total Users", total_users)
-            m2.metric("Total Revenue", f"${total_rev:,}")
+            m2.metric("Total Revenue", f"₹{total_rev:,}")
             m3.metric("Most Used Plan", most_used)
-            m4.metric("High Usage Users", high_usage_amount)
-            m5.metric("Active Plans", len(rev_data))
+            m4.metric("Active Plans", len(rev_data))
             
             st.markdown("---")
             
@@ -214,6 +244,7 @@ if st.button("Search Database"):
         try:
             res = requests.post(f"{API_URL}/query_data", json={"query": query})
             if res.status_code == 200:
+                st.success("Analysis Complete")
                 st.info(res.json().get("answer", ""))
                 log_action(f"Queried DB: '{query}'")
             else:

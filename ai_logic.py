@@ -53,23 +53,33 @@ init_rag_system()
 
 def explain_bill(user_data: Dict[str, Any]) -> str:
     if USE_MOCK:
-        reasoning = (
-            f"**Why the bill is {'high' if user_data['usage'] == 'high' else 'normal'}:** The final bill generated is ${user_data['bill_amount']}. This is directly correlated to their consumption volume on the {user_data['plan']} plan.\n\n"
-            f"**What caused the issue:** The customer's internal usage metric is currently tracked as '{user_data['usage']}' reflecting exactly {user_data['data_used']} of data transferred during the billing cycle.\n\n"
-            f"**What action is recommended:** {'We advise an immediate upgrade to a premium tier to mitigate overage fees.' if user_data['usage'] == 'high' else 'No immediate action required, usage is within safe parameters.'}"
-        )
+        if user_data['usage'] == 'high':
+            reasoning = (
+                "**1. Explanation:**\nUser is currently enrolled in the Standard tier, acquiring overage charges.\n\n"
+                "**2. Reason:**\nThe amount of data used exceeded the established plan threshold.\n\n"
+                "**3. Recommendation:**\nUpgrade the user to a Premium tier to normalize cost efficiency.\n\n"
+                "**4. Business Insight:**\nThe user is overcharged due to high usage. This may reduce customer satisfaction. Recommend upgrading to a higher plan."
+            )
+        else:
+            reasoning = (
+                "**1. Explanation:**\nUser is enrolled in the standard tier and billed within nominal range.\n\n"
+                "**2. Reason:**\nData utilization parameters matched the baseline threshold cleanly.\n\n"
+                "**3. Recommendation:**\nNo further plan adjustments are necessary right now.\n\n"
+                "**4. Business Insight:**\nStable consumption supports expected baseline LTV. No intervention required."
+            )
         return reasoning
     
     prompt = (f"Act as an expert financial telecom analyst. Analyze the bill for User ID {user_data['user_id']} who is on the {user_data['plan']} plan, "
               f"with {user_data['data_used']} data used, resulting in a bill of {user_data['bill_amount']}. "
-              "You MUST format your response into exactly these three distinct sections: "
-              "\n- **Why the bill is high** (or why it is normal)"
-              "\n- **What caused the issue**"
-              "\n- **What action is recommended**.")
+              "You MUST format your response strictly into a numbered list exactly matching these four sections: "
+              "\n1. Explanation"
+              "\n2. Reason"
+              "\n3. Recommendation"
+              "\n4. Business Insight (Must explicitly list '- Issue identified', '- Business impact', '- Recommended action').")
     return qa_chain.run(prompt)
 
 def recommend_plan(user_data: Dict[str, Any]) -> str:
-    # Use the same powerful 3-step prompt format for plan recommendations to keep it uniform
+    # Use the same powerful 4-step prompt format for plan recommendations to keep it strictly uniform 
     return explain_bill(user_data)
 
 def detect_anomaly(all_data: List[Dict[str, Any]]) -> dict:

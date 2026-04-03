@@ -22,10 +22,11 @@ def get_all_data():
 def get_analytics():
     df = load_billing_data()
     if df.empty:
-        return {"total_users": 0, "total_revenue": 0, "most_used_plan": "N/A", "revenue_by_plan": {}, "usage_counts": {}}
+        return {"total_users": 0, "total_revenue": 0, "average_bill": 0, "most_used_plan": "N/A", "revenue_by_plan": {}, "usage_counts": {}}
     
     total_users = len(df)
     total_revenue = int(df["bill_amount"].sum())
+    average_bill = round(df["bill_amount"].mean(), 2)
     most_used_plan = df["plan"].mode()[0] if not df.empty else "N/A"
     
     revenue_by_plan = df.groupby("plan")["bill_amount"].sum().to_dict()
@@ -34,6 +35,7 @@ def get_analytics():
     return {
         "total_users": total_users,
         "total_revenue": total_revenue,
+        "average_bill": average_bill,
         "most_used_plan": most_used_plan,
         "revenue_by_plan": revenue_by_plan,
         "usage_counts": usage_counts
