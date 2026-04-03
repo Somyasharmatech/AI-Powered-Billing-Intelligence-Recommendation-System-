@@ -1,0 +1,5 @@
+user_id,plan,usage,data_used,bill_amount
+101,Basic,low,2GB,199
+102,Premium,high,20GB,799
+103,Standard,medium,10GB,499
+104,Basic,high,15GB,599
